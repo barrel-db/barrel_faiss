@@ -1,0 +1,61 @@
+stages:
+  - build
+  - test
+
+variables:
+  REBAR3_VERSION: "3.24.0"
+
+.build_template: &build_template
+  stage: build
+  script:
+    - rebar3 compile
+  artifacts:
+    paths:
+      - _build/
+      - priv/
+    expire_in: 1 hour
+
+.test_template: &test_template
+  stage: test
+  script:
+    - rebar3 ct
+
+# Linux
+linux:build:
+  <<: *build_template
+  image: erlang:26
+  before_script:
+    - apt-get update
+    - apt-get install -y cmake libfaiss-dev libomp-dev libopenblas-dev
+
+linux:test:
+  <<: *test_template
+  image: erlang:26
+  needs: [linux:build]
+  before_script:
+    - apt-get update
+    - apt-get install -y cmake libfaiss-dev libomp-dev libopenblas-dev
+
+# macOS
+macos:build:
+  <<: *build_template
+  tags: [macos]
+  before_script:
+    - brew install faiss libomp || true
+
+macos:test:
+  <<: *test_template
+  tags: [macos]
+  needs: [macos:build]
+
+# FreeBSD
+freebsd:build:
+  <<: *build_template
+  tags: [freebsd]
+  before_script:
+    - pkg install -y faiss erlang cmake gmake openblas
+
+freebsd:test:
+  <<: *test_template
+  tags: [freebsd]
+  needs: [freebsd:build]
