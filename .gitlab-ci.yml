@@ -2,11 +2,12 @@ stages:
   - build
   - test
 
-variables:
-  REBAR3_VERSION: "3.24.0"
-
 .build_template: &build_template
   stage: build
+  image: erlang:26
+  before_script:
+    - apt-get update
+    - apt-get install -y cmake libfaiss-dev libomp-dev libopenblas-dev
   script:
     - rebar3 compile
   artifacts:
@@ -17,45 +18,29 @@ variables:
 
 .test_template: &test_template
   stage: test
+  image: erlang:26
+  before_script:
+    - apt-get update
+    - apt-get install -y cmake libfaiss-dev libomp-dev libopenblas-dev
   script:
     - rebar3 ct
 
-# Linux
-linux:build:
+# Linux amd64
+linux:build:amd64:
   <<: *build_template
-  image: erlang:26
-  before_script:
-    - apt-get update
-    - apt-get install -y cmake libfaiss-dev libomp-dev libopenblas-dev
+  tags: [amd64]
 
-linux:test:
+linux:test:amd64:
   <<: *test_template
-  image: erlang:26
-  needs: [linux:build]
-  before_script:
-    - apt-get update
-    - apt-get install -y cmake libfaiss-dev libomp-dev libopenblas-dev
+  tags: [amd64]
+  needs: [linux:build:amd64]
 
-# macOS
-macos:build:
+# Linux arm64
+linux:build:arm64:
   <<: *build_template
-  tags: [macos]
-  before_script:
-    - brew install faiss libomp || true
+  tags: [arm64]
 
-macos:test:
+linux:test:arm64:
   <<: *test_template
-  tags: [macos]
-  needs: [macos:build]
-
-# FreeBSD
-freebsd:build:
-  <<: *build_template
-  tags: [freebsd]
-  before_script:
-    - pkg install -y faiss erlang cmake gmake openblas
-
-freebsd:test:
-  <<: *test_template
-  tags: [freebsd]
-  needs: [freebsd:build]
+  tags: [arm64]
+  needs: [linux:build:arm64]
