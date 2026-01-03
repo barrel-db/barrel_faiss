@@ -6,14 +6,14 @@ FAISS indexes can be serialized to binary for storage in any key-value database.
 
 ```erlang
 %% Create and populate an index
-{ok, Index} = faiss:new(128),
-ok = faiss:add(Index, Vectors),
+{ok, Index} = barrel_faiss:new(128),
+ok = barrel_faiss:add(Index, Vectors),
 
 %% Serialize to binary
-{ok, Binary} = faiss:serialize(Index),
+{ok, Binary} = barrel_faiss:serialize(Index),
 
 %% Deserialize back to index
-{ok, RestoredIndex} = faiss:deserialize(Binary).
+{ok, RestoredIndex} = barrel_faiss:deserialize(Binary).
 ```
 
 ## RocksDB Integration
@@ -25,22 +25,22 @@ Store FAISS indexes in RocksDB:
 -export([save_index/3, load_index/2, search/4]).
 
 save_index(Db, Name, Index) ->
-    {ok, Binary} = faiss:serialize(Index),
-    Key = <<"faiss:", Name/binary>>,
+    {ok, Binary} = barrel_faiss:serialize(Index),
+    Key = <<"barrel_faiss:", Name/binary>>,
     rocksdb:put(Db, Key, Binary, []).
 
 load_index(Db, Name) ->
-    Key = <<"faiss:", Name/binary>>,
+    Key = <<"barrel_faiss:", Name/binary>>,
     case rocksdb:get(Db, Key, []) of
-        {ok, Binary} -> faiss:deserialize(Binary);
+        {ok, Binary} -> barrel_faiss:deserialize(Binary);
         not_found -> {error, not_found}
     end.
 
 search(Db, Name, Query, K) ->
     case load_index(Db, Name) of
         {ok, Index} ->
-            Result = faiss:search(Index, Query, K),
-            faiss:close(Index),
+            Result = barrel_faiss:search(Index, Query, K),
+            barrel_faiss:close(Index),
             Result;
         Error ->
             Error
@@ -78,12 +78,12 @@ handle_call({get_or_load, Name, Dimension}, _From, State) ->
             {reply, {ok, Index}, State};
         [] ->
             Path = filename:join(Dir, <<Name/binary, ".faiss">>),
-            case faiss:read_index(Path) of
+            case barrel_faiss:read_index(Path) of
                 {ok, Index} ->
                     ets:insert(Tab, {Name, Index}),
                     {reply, {ok, Index}, State};
                 {error, _} ->
-                    {ok, Index} = faiss:new(Dimension),
+                    {ok, Index} = barrel_faiss:new(Dimension),
                     ets:insert(Tab, {Name, Index}),
                     {reply, {ok, Index}, State}
             end
@@ -92,7 +92,7 @@ handle_call({get_or_load, Name, Dimension}, _From, State) ->
 handle_call({save, Name, Index}, _From, State) ->
     #{dir := Dir} = State,
     Path = filename:join(Dir, <<Name/binary, ".faiss">>),
-    Result = faiss:write_index(Index, Path),
+    Result = barrel_faiss:write_index(Index, Path),
     {reply, Result, State}.
 
 handle_cast(_Msg, State) ->
@@ -100,7 +100,7 @@ handle_cast(_Msg, State) ->
 
 terminate(_Reason, State) ->
     #{table := Tab} = State,
-    ets:foldl(fun({_Name, Index}, _) -> faiss:close(Index) end, ok, Tab),
+    ets:foldl(fun({_Name, Index}, _) -> barrel_faiss:close(Index) end, ok, Tab),
     ok.
 ```
 
@@ -114,13 +114,13 @@ For large vector sets, shard across multiple indexes:
 
 -record(sharded, {
     dimension :: pos_integer(),
-    shards :: #{non_neg_integer() => faiss:index()},
+    shards :: #{non_neg_integer() => barrel_faiss:index()},
     num_shards :: pos_integer()
 }).
 
 new(Dimension, NumShards) ->
     Shards = maps:from_list([
-        {I, element(2, faiss:new(Dimension))}
+        {I, element(2, barrel_faiss:new(Dimension))}
         || I <- lists:seq(0, NumShards - 1)
     ]),
     #sharded{dimension = Dimension, shards = Shards, num_shards = NumShards}.
@@ -128,14 +128,14 @@ new(Dimension, NumShards) ->
 add(#sharded{shards = Shards, num_shards = N} = S, VectorId, Vector) ->
     ShardId = VectorId rem N,
     Index = maps:get(ShardId, Shards),
-    ok = faiss:add(Index, Vector),
+    ok = barrel_faiss:add(Index, Vector),
     S.
 
 search(#sharded{shards = Shards}, Query, K) ->
     %% Search all shards in parallel
     Results = pmap(
         fun({_Id, Index}) ->
-            faiss:search(Index, Query, K)
+            barrel_faiss:search(Index, Query, K)
         end,
         maps:to_list(Shards)
     ),

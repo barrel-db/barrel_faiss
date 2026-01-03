@@ -1,4 +1,4 @@
-{application, faiss,
+{application, barrel_faiss,
  [{description, "Erlang NIF bindings for FAISS vector similarity search"},
   {vsn, "0.1.0"},
   {registered, []},

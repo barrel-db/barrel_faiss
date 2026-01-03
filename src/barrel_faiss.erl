@@ -7,17 +7,17 @@
 %%
 %% ```
 %% %% Create a flat index for 128-dimensional vectors
-%% {ok, Index} = faiss:new(128),
+%% {ok, Index} = barrel_faiss:new(128),
 %%
 %% %% Add vectors (binary of packed float32)
 %% Vectors = <<1.0:32/float-native, 2.0:32/float-native, ...>>,
-%% ok = faiss:add(Index, Vectors),
+%% ok = barrel_faiss:add(Index, Vectors),
 %%
 %% %% Search for nearest neighbors
-%% {ok, Distances, Labels} = faiss:search(Index, Query, 10),
+%% {ok, Distances, Labels} = barrel_faiss:search(Index, Query, 10),
 %%
 %% %% Clean up
-%% ok = faiss:close(Index).
+%% ok = barrel_faiss:close(Index).
 %% '''
 %%
 %% == Vector Format ==
@@ -36,7 +36,7 @@
 %% </ul>
 %%
 %% @end
--module(faiss).
+-module(barrel_faiss).
 
 %% Index creation
 -export([new/1, new/2, index_factory/2, index_factory/3, close/1]).
@@ -64,8 +64,8 @@
 -define(nif_stub, erlang:nif_error({not_loaded, [{module, ?MODULE}, {line, ?LINE}]})).
 
 init() ->
-    PrivDir = code:priv_dir(faiss),
-    ok = erlang:load_nif(filename:join(PrivDir, "faiss"), 0).
+    PrivDir = code:priv_dir(barrel_faiss),
+    ok = erlang:load_nif(filename:join(PrivDir, "barrel_faiss"), 0).
 
 %% @doc Create a new flat L2 index.
 %%
@@ -89,8 +89,8 @@ new(Dimension) ->
 %%
 %% == Example ==
 %% ```
-%% {ok, Index} = faiss:new(128, l2),
-%% true = faiss:is_trained(Index).
+%% {ok, Index} = barrel_faiss:new(128, l2),
+%% true = barrel_faiss:is_trained(Index).
 %% '''
 -spec new(Dimension :: pos_integer(), Metric :: metric_type()) ->
     {ok, index()} | {error, term()}.
@@ -123,8 +123,8 @@ index_factory(Dimension, Description) ->
 %%
 %% == Example ==
 %% ```
-%% {ok, Index} = faiss:index_factory(128, <<"HNSW32">>),
-%% ok = faiss:add(Index, Vectors).
+%% {ok, Index} = barrel_faiss:index_factory(128, <<"HNSW32">>),
+%% ok = barrel_faiss:add(Index, Vectors).
 %% '''
 -spec index_factory(Dimension :: pos_integer(), Description :: binary(),
                     Metric :: metric_type()) ->
@@ -170,7 +170,7 @@ ntotal(_Index) ->
 %% Vectors = <<1.0:32/float-native, 2.0:32/float-native, 3.0:32/float-native, 4.0:32/float-native,
 %%             5.0:32/float-native, 6.0:32/float-native, 7.0:32/float-native, 8.0:32/float-native,
 %%             9.0:32/float-native, 10.0:32/float-native, 11.0:32/float-native, 12.0:32/float-native>>,
-%% ok = faiss:add(Index, Vectors).
+%% ok = barrel_faiss:add(Index, Vectors).
 %% '''
 -spec add(Index :: index(), Vectors :: binary()) -> ok | {error, term()}.
 add(_Index, _Vectors) ->
@@ -192,7 +192,7 @@ add(_Index, _Vectors) ->
 %% == Example ==
 %% ```
 %% Query = <<1.5:32/float-native, 2.5:32/float-native, 3.5:32/float-native, 4.5:32/float-native>>,
-%% {ok, Distances, Labels} = faiss:search(Index, Query, 5),
+%% {ok, Distances, Labels} = barrel_faiss:search(Index, Query, 5),
 %% DistList = [D || <<D:32/float-native>> <= Distances],
 %% LabelList = [L || <<L:64/signed-native>> <= Labels].
 %% '''
@@ -211,10 +211,10 @@ search(_Index, _Queries, _K) ->
 %%
 %% == Example ==
 %% ```
-%% {ok, Index} = faiss:index_factory(128, <<"IVF100,Flat">>),
-%% false = faiss:is_trained(Index),
-%% ok = faiss:train(Index, TrainingVectors),
-%% true = faiss:is_trained(Index).
+%% {ok, Index} = barrel_faiss:index_factory(128, <<"IVF100,Flat">>),
+%% false = barrel_faiss:is_trained(Index),
+%% ok = barrel_faiss:train(Index, TrainingVectors),
+%% true = barrel_faiss:is_trained(Index).
 %% '''
 -spec train(Index :: index(), Vectors :: binary()) -> ok | {error, term()}.
 train(_Index, _Vectors) ->
@@ -229,7 +229,7 @@ train(_Index, _Vectors) ->
 %%
 %% == Example ==
 %% ```
-%% {ok, Binary} = faiss:serialize(Index),
+%% {ok, Binary} = barrel_faiss:serialize(Index),
 %% ok = rocksdb:put(Db, <<"my_index">>, Binary).
 %% '''
 %%
@@ -247,7 +247,7 @@ serialize(_Index) ->
 %% == Example ==
 %% ```
 %% {ok, Binary} = rocksdb:get(Db, <<"my_index">>),
-%% {ok, Index} = faiss:deserialize(Binary).
+%% {ok, Index} = barrel_faiss:deserialize(Binary).
 %% '''
 %%
 %% @see serialize/1

@@ -76,9 +76,9 @@ set(NIF_SOURCES
 )
 
 # Create NIF shared library
-add_library(faiss MODULE ${NIF_SOURCES})
+add_library(barrel_faiss MODULE ${NIF_SOURCES})
 
-target_include_directories(faiss PRIVATE
+target_include_directories(barrel_faiss PRIVATE
     ${ERLANG_ERTS_INCLUDE_PATH}
     ${FAISS_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -86,7 +86,7 @@ target_include_directories(faiss PRIVATE
 
 if(OpenMP_CXX_FOUND)
     if(OpenMP_INCLUDE_DIR)
-        target_include_directories(faiss PRIVATE ${OpenMP_INCLUDE_DIR})
+        target_include_directories(barrel_faiss PRIVATE ${OpenMP_INCLUDE_DIR})
     endif()
 endif()
 
@@ -123,9 +123,9 @@ if(APPLE)
     set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -flat_namespace -undefined suppress")
 endif()
 
-target_link_libraries(faiss PRIVATE ${LINK_LIBS})
+target_link_libraries(barrel_faiss PRIVATE ${LINK_LIBS})
 
-set_target_properties(faiss PROPERTIES
+set_target_properties(barrel_faiss PROPERTIES
     PREFIX ""
     SUFFIX ".so"
     CXX_STANDARD 17

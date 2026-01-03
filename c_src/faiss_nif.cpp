@@ -78,4 +78,4 @@ static ErlNifFunc nif_funcs[] = {
     {"read_index", 1, faiss_nif::nif_read_index, ERL_NIF_DIRTY_JOB_IO_BOUND},
 };
 
-ERL_NIF_INIT(faiss, nif_funcs, on_load, nullptr, on_upgrade, nullptr)
+ERL_NIF_INIT(barrel_faiss, nif_funcs, on_load, nullptr, on_upgrade, nullptr)

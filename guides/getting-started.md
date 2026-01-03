@@ -42,10 +42,10 @@ Add `faiss` as a dependency in `rebar.config`:
 
 ```erlang
 %% Create a flat L2 index for 128-dimensional vectors
-{ok, Index} = faiss:new(128).
+{ok, Index} = barrel_faiss:new(128).
 
 %% Or specify the metric type
-{ok, IndexIP} = faiss:new(128, inner_product).
+{ok, IndexIP} = barrel_faiss:new(128, inner_product).
 ```
 
 ### Adding Vectors
@@ -59,7 +59,7 @@ Vectors = <<
     5.0:32/float-native, 6.0:32/float-native, 7.0:32/float-native, 8.0:32/float-native,
     9.0:32/float-native, 10.0:32/float-native, 11.0:32/float-native, 12.0:32/float-native
 >>,
-ok = faiss:add(Index, Vectors).
+ok = barrel_faiss:add(Index, Vectors).
 ```
 
 ### Searching
@@ -67,7 +67,7 @@ ok = faiss:add(Index, Vectors).
 ```erlang
 %% Search for 5 nearest neighbors
 Query = <<1.5:32/float-native, 2.5:32/float-native, 3.5:32/float-native, 4.5:32/float-native>>,
-{ok, Distances, Labels} = faiss:search(Index, Query, 5).
+{ok, Distances, Labels} = barrel_faiss:search(Index, Query, 5).
 
 %% Parse results
 DistList = [D || <<D:32/float-native>> <= Distances],
@@ -77,7 +77,7 @@ LabelList = [L || <<L:64/signed-native>> <= Labels].
 ### Cleanup
 
 ```erlang
-ok = faiss:close(Index).
+ok = barrel_faiss:close(Index).
 ```
 
 ## Index Types
@@ -86,13 +86,13 @@ Use `index_factory/2` for different index types:
 
 ```erlang
 %% Flat index (exact search)
-{ok, Flat} = faiss:index_factory(128, <<"Flat">>).
+{ok, Flat} = barrel_faiss:index_factory(128, <<"Flat">>).
 
 %% HNSW (fast approximate search)
-{ok, HNSW} = faiss:index_factory(128, <<"HNSW32">>).
+{ok, HNSW} = barrel_faiss:index_factory(128, <<"HNSW32">>).
 
 %% IVF (requires training)
-{ok, IVF} = faiss:index_factory(128, <<"IVF100,Flat">>).
+{ok, IVF} = barrel_faiss:index_factory(128, <<"IVF100,Flat">>).
 ```
 
 ## Training IVF Indexes
@@ -100,15 +100,15 @@ Use `index_factory/2` for different index types:
 IVF indexes require training before use:
 
 ```erlang
-{ok, Index} = faiss:index_factory(128, <<"IVF100,Flat">>),
-false = faiss:is_trained(Index),
+{ok, Index} = barrel_faiss:index_factory(128, <<"IVF100,Flat">>),
+false = barrel_faiss:is_trained(Index),
 
 %% Train with at least nlist * 39 vectors (100 * 39 = 3900)
-ok = faiss:train(Index, TrainingVectors),
-true = faiss:is_trained(Index),
+ok = barrel_faiss:train(Index, TrainingVectors),
+true = barrel_faiss:is_trained(Index),
 
 %% Now you can add vectors
-ok = faiss:add(Index, Vectors).
+ok = barrel_faiss:add(Index, Vectors).
 ```
 
 ## Next Steps

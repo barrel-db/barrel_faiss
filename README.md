@@ -1,4 +1,4 @@
-# faiss
+# barrel_faiss
 
 Erlang NIF bindings for [FAISS](https://github.com/facebookresearch/faiss) (Facebook AI Similarity Search).
 
@@ -45,15 +45,15 @@ rebar3 compile
 
 ```erlang
 %% Create a flat L2 index with dimension 128
-{ok, Index} = faiss:new(128).
+{ok, Index} = barrel_faiss:new(128).
 
 %% Create with inner product metric
-{ok, Index} = faiss:new(128, inner_product).
+{ok, Index} = barrel_faiss:new(128, inner_product).
 
 %% Create using factory string (supports all FAISS index types)
-{ok, FlatIndex} = faiss:index_factory(128, <<"Flat">>).
-{ok, HnswIndex} = faiss:index_factory(128, <<"HNSW32">>).
-{ok, IvfIndex} = faiss:index_factory(128, <<"IVF100,Flat">>).
+{ok, FlatIndex} = barrel_faiss:index_factory(128, <<"Flat">>).
+{ok, HnswIndex} = barrel_faiss:index_factory(128, <<"HNSW32">>).
+{ok, IvfIndex} = barrel_faiss:index_factory(128, <<"IVF100,Flat">>).
 ```
 
 ### Adding Vectors
@@ -68,9 +68,9 @@ Vectors = <<
     9.0:32/float-native, 10.0:32/float-native, 11.0:32/float-native, 12.0:32/float-native
 >>,
 
-{ok, Index} = faiss:new(4),
-ok = faiss:add(Index, Vectors),
-3 = faiss:ntotal(Index).
+{ok, Index} = barrel_faiss:new(4),
+ok = barrel_faiss:add(Index, Vectors),
+3 = barrel_faiss:ntotal(Index).
 ```
 
 ### Searching
@@ -78,7 +78,7 @@ ok = faiss:add(Index, Vectors),
 ```erlang
 %% Search for 5 nearest neighbors
 Query = <<1.5:32/float-native, 2.5:32/float-native, 3.5:32/float-native, 4.5:32/float-native>>,
-{ok, Distances, Labels} = faiss:search(Index, Query, 5),
+{ok, Distances, Labels} = barrel_faiss:search(Index, Query, 5),
 
 %% Parse results
 DistanceList = [D || <<D:32/float-native>> <= Distances],
@@ -90,16 +90,16 @@ LabelList = [L || <<L:64/signed-native>> <= Labels].
 IVF indexes require training before adding vectors:
 
 ```erlang
-{ok, Index} = faiss:index_factory(128, <<"IVF100,Flat">>),
-false = faiss:is_trained(Index),
+{ok, Index} = barrel_faiss:index_factory(128, <<"IVF100,Flat">>),
+false = barrel_faiss:is_trained(Index),
 
 %% Train with sample vectors (need enough for 100 centroids)
 TrainingData = generate_random_vectors(10000, 128),
-ok = faiss:train(Index, TrainingData),
-true = faiss:is_trained(Index),
+ok = barrel_faiss:train(Index, TrainingData),
+true = barrel_faiss:is_trained(Index),
 
 %% Now you can add vectors
-ok = faiss:add(Index, Vectors).
+ok = barrel_faiss:add(Index, Vectors).
 ```
 
 ### Serialization (for K/V Storage)
@@ -108,38 +108,38 @@ Serialize indexes to binary for storage in RocksDB, ETS, or any K/V store:
 
 ```erlang
 %% Serialize to binary
-{ok, Binary} = faiss:serialize(Index),
+{ok, Binary} = barrel_faiss:serialize(Index),
 
 %% Store in your K/V store
 ok = rocksdb:put(Db, <<"my_index">>, Binary),
 
 %% Later, deserialize
 {ok, Binary2} = rocksdb:get(Db, <<"my_index">>),
-{ok, Index2} = faiss:deserialize(Binary2).
+{ok, Index2} = barrel_faiss:deserialize(Binary2).
 ```
 
 ### File I/O
 
 ```erlang
 %% Save to file
-ok = faiss:write_index(Index, <<"/path/to/index.faiss">>),
+ok = barrel_faiss:write_index(Index, <<"/path/to/index.faiss">>),
 
 %% Load from file
-{ok, Index2} = faiss:read_index(<<"/path/to/index.faiss">>).
+{ok, Index2} = barrel_faiss:read_index(<<"/path/to/index.faiss">>).
 ```
 
 ### Index Properties
 
 ```erlang
-Dim = faiss:dimension(Index),      %% Vector dimension
-N = faiss:ntotal(Index),           %% Number of vectors
-Trained = faiss:is_trained(Index). %% Training status
+Dim = barrel_faiss:dimension(Index),      %% Vector dimension
+N = barrel_faiss:ntotal(Index),           %% Number of vectors
+Trained = barrel_faiss:is_trained(Index). %% Training status
 ```
 
 ### Cleanup
 
 ```erlang
-ok = faiss:close(Index).
+ok = barrel_faiss:close(Index).
 ```
 
 ## Index Types
