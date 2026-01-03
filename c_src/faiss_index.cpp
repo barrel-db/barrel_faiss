@@ -7,6 +7,7 @@
 #include <faiss/impl/io.h>
 
 #include <cstring>
+#include <mutex>
 #include <vector>
 
 namespace faiss_nif {
