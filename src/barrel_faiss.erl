@@ -45,7 +45,10 @@
 -export([dimension/1, is_trained/1, ntotal/1]).
 
 %% Core operations
--export([add/2, search/3, train/2]).
+-export([add/2, add_with_ids/3, search/3, train/2]).
+
+%% Deletion
+-export([remove_ids/2]).
 
 %% Serialization
 -export([serialize/1, deserialize/1]).
@@ -176,6 +179,27 @@ ntotal(_Index) ->
 add(_Index, _Vectors) ->
     ?nif_stub.
 
+%% @doc Add vectors with explicit IDs.
+%%
+%% Vectors must be a binary of packed float32 values in native endianness.
+%% IDs must be a binary of packed int64 values in native endianness.
+%% The number of vectors must match the number of IDs.
+%%
+%% Note: Not all index types support add_with_ids. Use IDMap wrapper if needed.
+%%
+%% This function runs on a dirty CPU scheduler.
+%%
+%% == Example ==
+%% ```
+%% Vectors = <<1.0:32/float-native, 2.0:32/float-native, 3.0:32/float-native, 4.0:32/float-native>>,
+%% IDs = <<100:64/signed-native>>,
+%% ok = barrel_faiss:add_with_ids(Index, Vectors, IDs).
+%% '''
+-spec add_with_ids(Index :: index(), Vectors :: binary(), IDs :: binary()) ->
+    ok | {error, term()}.
+add_with_ids(_Index, _Vectors, _IDs) ->
+    ?nif_stub.
+
 %% @doc Search for k nearest neighbors.
 %%
 %% Queries must be a binary of packed float32 values.
@@ -218,6 +242,27 @@ search(_Index, _Queries, _K) ->
 %% '''
 -spec train(Index :: index(), Vectors :: binary()) -> ok | {error, term()}.
 train(_Index, _Vectors) ->
+    ?nif_stub.
+
+%% @doc Remove vectors by ID.
+%%
+%% IDs must be a binary of packed int64 values in native endianness.
+%% Returns the number of vectors actually removed.
+%%
+%% Note: Not all index types support removal. HNSW indexes will return an error.
+%%
+%% This function runs on a dirty CPU scheduler.
+%%
+%% == Example ==
+%% ```
+%% %% Remove vectors with IDs 0, 1, 2
+%% IDs = <<0:64/signed-native, 1:64/signed-native, 2:64/signed-native>>,
+%% {ok, Removed} = barrel_faiss:remove_ids(Index, IDs),
+%% 3 = Removed.
+%% '''
+-spec remove_ids(Index :: index(), IDs :: binary()) ->
+    {ok, Removed :: non_neg_integer()} | {error, term()}.
+remove_ids(_Index, _IDs) ->
     ?nif_stub.
 
 %% @doc Serialize index to binary.

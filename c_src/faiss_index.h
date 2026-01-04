@@ -48,4 +48,8 @@ ERL_NIF_TERM nif_deserialize(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
 ERL_NIF_TERM nif_write_index(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
 ERL_NIF_TERM nif_read_index(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
 
+// NIF functions - Phase 5 (Deletion)
+ERL_NIF_TERM nif_remove_ids(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
+ERL_NIF_TERM nif_add_with_ids(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
+
 }  // namespace faiss_nif

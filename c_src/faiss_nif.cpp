@@ -76,6 +76,10 @@ static ErlNifFunc nif_funcs[] = {
     // Phase 4: File I/O - dirty IO
     {"write_index", 2, faiss_nif::nif_write_index, ERL_NIF_DIRTY_JOB_IO_BOUND},
     {"read_index", 1, faiss_nif::nif_read_index, ERL_NIF_DIRTY_JOB_IO_BOUND},
+
+    // Phase 5: Deletion - dirty CPU
+    {"remove_ids", 2, faiss_nif::nif_remove_ids, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"add_with_ids", 3, faiss_nif::nif_add_with_ids, ERL_NIF_DIRTY_JOB_CPU_BOUND},
 };
 
 ERL_NIF_INIT(barrel_faiss, nif_funcs, on_load, nullptr, on_upgrade, nullptr)

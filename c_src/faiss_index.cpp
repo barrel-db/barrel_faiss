@@ -5,6 +5,7 @@
 #include <faiss/index_factory.h>
 #include <faiss/index_io.h>
 #include <faiss/impl/io.h>
+#include <faiss/impl/IDSelector.h>
 
 #include <cstring>
 #include <mutex>
@@ -436,6 +437,85 @@ ERL_NIF_TERM nif_read_index(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
         enif_release_resource(res);
 
         return enif_make_tuple2(env, ATOM_OK, result);
+    } catch (const std::exception& e) {
+        return make_error(env, e.what());
+    }
+}
+
+// Phase 5: remove_ids/2 - remove vectors by ID batch
+ERL_NIF_TERM nif_remove_ids(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    IndexResource* res;
+    if (!enif_get_resource(env, argv[0], INDEX_RESOURCE_TYPE, reinterpret_cast<void**>(&res))) {
+        return enif_make_badarg(env);
+    }
+
+    ErlNifBinary ids_bin;
+    if (!enif_inspect_binary(env, argv[1], &ids_bin)) {
+        return enif_make_badarg(env);
+    }
+
+    std::unique_lock<std::shared_mutex> lock(res->rw_mutex);
+    if (!res->index) {
+        return make_error(env, "index_closed");
+    }
+
+    size_t n = ids_bin.size / sizeof(int64_t);
+    if (ids_bin.size % sizeof(int64_t) != 0) {
+        return make_error(env, "invalid_ids_size");
+    }
+
+    const int64_t* ids = reinterpret_cast<const int64_t*>(ids_bin.data);
+
+    try {
+        faiss::IDSelectorBatch selector(n, ids);
+        size_t removed = res->index->remove_ids(selector);
+        return enif_make_tuple2(env, ATOM_OK, enif_make_uint64(env, removed));
+    } catch (const std::exception& e) {
+        return make_error(env, e.what());
+    }
+}
+
+// Phase 5: add_with_ids/3 - add vectors with explicit IDs
+ERL_NIF_TERM nif_add_with_ids(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
+    IndexResource* res;
+    if (!enif_get_resource(env, argv[0], INDEX_RESOURCE_TYPE, reinterpret_cast<void**>(&res))) {
+        return enif_make_badarg(env);
+    }
+
+    ErlNifBinary vectors_bin, ids_bin;
+    if (!enif_inspect_binary(env, argv[1], &vectors_bin) ||
+        !enif_inspect_binary(env, argv[2], &ids_bin)) {
+        return enif_make_badarg(env);
+    }
+
+    std::unique_lock<std::shared_mutex> lock(res->rw_mutex);
+    if (!res->index) {
+        return make_error(env, "index_closed");
+    }
+
+    if (!res->index->is_trained) {
+        return make_error(env, "not_trained");
+    }
+
+    int dimension = res->index->d;
+    size_t vector_size = dimension * sizeof(float);
+
+    if (vectors_bin.size % vector_size != 0) {
+        return make_error(env, "invalid_vector_size");
+    }
+
+    int64_t n = vectors_bin.size / vector_size;
+
+    if (ids_bin.size != static_cast<size_t>(n) * sizeof(int64_t)) {
+        return make_error(env, "ids_count_mismatch");
+    }
+
+    const float* vectors = reinterpret_cast<const float*>(vectors_bin.data);
+    const int64_t* ids = reinterpret_cast<const int64_t*>(ids_bin.data);
+
+    try {
+        res->index->add_with_ids(n, vectors, ids);
+        return ATOM_OK;
     } catch (const std::exception& e) {
         return make_error(env, e.what());
     }

@@ -42,7 +42,14 @@
 
     %% File I/O tests
     file_io_flat_test/1,
-    file_io_hnsw_test/1
+    file_io_hnsw_test/1,
+
+    %% Deletion tests
+    remove_ids_basic_test/1,
+    remove_ids_batch_test/1,
+    remove_ids_not_found_test/1,
+    remove_ids_hnsw_error_test/1,
+    add_with_ids_ivf_test/1
 ]).
 
 all() ->
@@ -54,7 +61,8 @@ all() ->
         {group, training},
         {group, accuracy},
         {group, serialization},
-        {group, file_io}
+        {group, file_io},
+        {group, deletion}
     ].
 
 groups() ->
@@ -98,6 +106,13 @@ groups() ->
         {file_io, [sequence], [
             file_io_flat_test,
             file_io_hnsw_test
+        ]},
+        {deletion, [sequence], [
+            remove_ids_basic_test,
+            remove_ids_batch_test,
+            remove_ids_not_found_test,
+            remove_ids_hnsw_error_test,
+            add_with_ids_ivf_test
         ]}
     ].
 
@@ -528,6 +543,106 @@ file_io_hnsw_test(Config) ->
 
     ok = barrel_faiss:close(Index1),
     ok = barrel_faiss:close(Index2).
+
+%%====================================================================
+%% Deletion tests
+%%====================================================================
+
+remove_ids_basic_test(_Config) ->
+    Dim = 4,
+    {ok, Index} = barrel_faiss:new(Dim),
+
+    %% Add 5 vectors
+    Vectors = random_vectors(5, Dim),
+    ok = barrel_faiss:add(Index, Vectors),
+    5 = barrel_faiss:ntotal(Index),
+
+    %% Remove vector with ID 2
+    IDs = <<2:64/signed-native>>,
+    {ok, Removed} = barrel_faiss:remove_ids(Index, IDs),
+    1 = Removed,
+    4 = barrel_faiss:ntotal(Index),
+
+    ok = barrel_faiss:close(Index).
+
+remove_ids_batch_test(_Config) ->
+    Dim = 8,
+    {ok, Index} = barrel_faiss:new(Dim),
+
+    %% Add 10 vectors
+    ok = barrel_faiss:add(Index, random_vectors(10, Dim)),
+    10 = barrel_faiss:ntotal(Index),
+
+    %% Remove vectors with IDs 1, 3, 5, 7
+    IDs = <<1:64/signed-native, 3:64/signed-native, 5:64/signed-native, 7:64/signed-native>>,
+    {ok, Removed} = barrel_faiss:remove_ids(Index, IDs),
+    4 = Removed,
+    6 = barrel_faiss:ntotal(Index),
+
+    ok = barrel_faiss:close(Index).
+
+remove_ids_not_found_test(_Config) ->
+    Dim = 4,
+    {ok, Index} = barrel_faiss:new(Dim),
+
+    %% Add 3 vectors (IDs 0, 1, 2)
+    ok = barrel_faiss:add(Index, random_vectors(3, Dim)),
+    3 = barrel_faiss:ntotal(Index),
+
+    %% Try to remove non-existent ID 999
+    IDs = <<999:64/signed-native>>,
+    {ok, Removed} = barrel_faiss:remove_ids(Index, IDs),
+    0 = Removed,
+    3 = barrel_faiss:ntotal(Index),
+
+    ok = barrel_faiss:close(Index).
+
+remove_ids_hnsw_error_test(_Config) ->
+    Dim = 32,
+    {ok, Index} = barrel_faiss:index_factory(Dim, <<"HNSW16">>),
+
+    %% Add some vectors
+    ok = barrel_faiss:add(Index, random_vectors(10, Dim)),
+    10 = barrel_faiss:ntotal(Index),
+
+    %% Try to remove - HNSW doesn't support removal
+    IDs = <<0:64/signed-native>>,
+    {error, _Reason} = barrel_faiss:remove_ids(Index, IDs),
+
+    %% ntotal should still be 10 (unchanged)
+    10 = barrel_faiss:ntotal(Index),
+
+    ok = barrel_faiss:close(Index).
+
+add_with_ids_ivf_test(_Config) ->
+    Dim = 32,
+    {ok, Index} = barrel_faiss:index_factory(Dim, <<"IVF16,Flat">>),
+
+    %% Train first
+    ok = barrel_faiss:train(Index, random_vectors(16 * 50, Dim)),
+    true = barrel_faiss:is_trained(Index),
+
+    %% Add vectors with explicit IDs: 100, 200, 300
+    V1 = random_vectors(1, Dim),
+    V2 = random_vectors(1, Dim),
+    V3 = random_vectors(1, Dim),
+    Vectors = <<V1/binary, V2/binary, V3/binary>>,
+    IDs = <<100:64/signed-native, 200:64/signed-native, 300:64/signed-native>>,
+
+    ok = barrel_faiss:add_with_ids(Index, Vectors, IDs),
+    3 = barrel_faiss:ntotal(Index),
+
+    %% Search for V1 - should return ID 100
+    {ok, _DistBin, LabelBin} = barrel_faiss:search(Index, V1, 1),
+    [Label] = [L || <<L:64/signed-native>> <= LabelBin],
+    100 = Label,
+
+    %% Remove ID 200
+    RemoveIDs = <<200:64/signed-native>>,
+    {ok, 1} = barrel_faiss:remove_ids(Index, RemoveIDs),
+    2 = barrel_faiss:ntotal(Index),
+
+    ok = barrel_faiss:close(Index).
 
 %%====================================================================
 %% Helpers
