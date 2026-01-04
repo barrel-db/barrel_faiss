@@ -85,6 +85,26 @@ DistanceList = [D || <<D:32/float-native>> <= Distances],
 LabelList = [L || <<L:64/signed-native>> <= Labels].
 ```
 
+### Adding Vectors with IDs
+
+For indexes that support ID assignment (IVF indexes):
+
+```erlang
+%% Add vectors with explicit IDs
+Ids = <<100:64/signed-native, 200:64/signed-native, 300:64/signed-native>>,
+ok = barrel_faiss:add_with_ids(Index, Vectors, Ids).
+```
+
+### Removing Vectors
+
+Remove vectors by ID (supported by Flat and IVF indexes, not HNSW):
+
+```erlang
+%% Remove vectors by their IDs
+IdsToRemove = <<100:64/signed-native, 200:64/signed-native>>,
+{ok, NumRemoved} = barrel_faiss:remove_ids(Index, IdsToRemove).
+```
+
 ### Training IVF Indexes
 
 IVF indexes require training before adding vectors:

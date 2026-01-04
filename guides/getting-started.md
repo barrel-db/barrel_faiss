@@ -32,7 +32,7 @@ Add `faiss` as a dependency in `rebar.config`:
 
 ```erlang
 {deps, [
-    {faiss, "0.1.0"}
+    {barrel_faiss, "0.2.0"}
 ]}.
 ```
 
