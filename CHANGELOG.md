@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-03-07
+
+### Changed
+
+- CI: Use Debian-based Erlang containers for GitHub Actions
+- CI: Add xref, dialyzer, eunit, and common tests as separate steps
+- Configure xref checks for library usage
+
 ## [0.2.0] - 2026-01-04
 
 ### Added
@@ -56,5 +64,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - K/V database integration guide
   - API reference via ex_doc
 
+[0.2.1]: https://github.com/barrel-db/barrel_faiss/releases/tag/0.2.1
 [0.2.0]: https://github.com/barrel-db/barrel_faiss/releases/tag/0.2.0
 [0.1.0]: https://github.com/barrel-db/barrel_faiss/releases/tag/0.1.0
