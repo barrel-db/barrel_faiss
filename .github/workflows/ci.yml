@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: |
           apt-get update
-          apt-get install -y cmake libfaiss-dev libomp-dev libopenblas-dev git curl
+          apt-get install -y cmake build-essential libfaiss-dev libomp-dev libopenblas-dev git curl
 
       - name: Install rebar3
         run: |
