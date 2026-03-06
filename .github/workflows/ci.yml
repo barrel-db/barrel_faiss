@@ -23,13 +23,12 @@ jobs:
       - name: Install dependencies
         run: |
           apt-get update
-          apt-get install -y cmake libfaiss-dev libomp-dev libopenblas-dev git
+          apt-get install -y cmake libfaiss-dev libomp-dev libopenblas-dev git curl
 
       - name: Install rebar3
         run: |
-          wget https://s3.amazonaws.com/rebar3/rebar3
-          chmod +x rebar3
-          mv rebar3 /usr/local/bin/
+          curl -o /usr/local/bin/rebar3 https://s3.amazonaws.com/rebar3/rebar3
+          chmod +x /usr/local/bin/rebar3
 
       - name: Compile
         run: rebar3 compile
