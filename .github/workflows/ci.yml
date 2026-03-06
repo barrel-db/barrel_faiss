@@ -14,29 +14,22 @@ jobs:
       matrix:
         otp: ['26', '27']
 
+    container:
+      image: erlang:${{ matrix.otp }}-slim
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install FAISS dependencies
+      - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake libfaiss-dev libomp-dev libopenblas-dev
+          apt-get update
+          apt-get install -y cmake libfaiss-dev libomp-dev libopenblas-dev git
 
-      - name: Setup Erlang
-        uses: erlef/setup-beam@v1
-        with:
-          otp-version: ${{ matrix.otp }}
-          rebar3-version: '3.23'
-
-      - name: Cache rebar3
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/rebar3
-            _build
-          key: ${{ runner.os }}-rebar3-${{ matrix.otp }}-${{ hashFiles('rebar.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-rebar3-${{ matrix.otp }}-
+      - name: Install rebar3
+        run: |
+          wget https://s3.amazonaws.com/rebar3/rebar3
+          chmod +x rebar3
+          mv rebar3 /usr/local/bin/
 
       - name: Compile
         run: rebar3 compile
