@@ -1,5 +1,10 @@
 # barrel_faiss
 
+> [!IMPORTANT]
+> This repository is archived. `barrel_faiss` now lives in the Barrel umbrella
+> at [barrel-db/barrel](https://github.com/barrel-db/barrel), under
+> `apps/barrel_faiss`. Development, issues, and releases happen there.
+
 Erlang NIF bindings for [FAISS](https://github.com/facebookresearch/faiss) (Facebook AI Similarity Search).
 
 FAISS is a library for efficient similarity search and clustering of dense vectors.
